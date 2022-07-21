@@ -5,5 +5,5 @@ type Props = {
 };
 
 export default function Layout({ children }: Props) {
-  return <div className="h-screen bg-gray-800">{children}</div>;
+  return <div className="h-screen bg-[#00aeb0]">{children}</div>;
 }

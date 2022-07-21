@@ -7,10 +7,13 @@ Completly rewritten the UI to make it more appealing on the eye and rewritten th
 This version now uses typescript and React v18.0 and is therefore incompatible with the old repo.
 
 WIP TODO:
-
-- Tipping isn't implemented (yet).
+- Implement tipping.
 - Implement new coin to tip users with instead of ETH cause that's expensive...
 - Rewrite smart contract in DVM-BASIC and deploy on Dero Stargate Testnet
+
+BUGS TO BE FIXED:
+-The uploaded songs don't show up on site refresh unless you click on the debug button "Load Songs" in the bottom left corner. (idk why..)
+-The upload might take a while to do..
 
 Requirements(atm):
 

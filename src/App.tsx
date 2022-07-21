@@ -8,6 +8,7 @@ import AccountModal from "./components/AccountModal";
 import UploadSong from "./components/UploadSong";
 import Songs from "./components/Songs";
 import { create, CID, IPFSHTTPClient } from "ipfs-http-client";
+import { access } from "fs";
 
 let ipfs: IPFSHTTPClient | undefined;
 try {
@@ -27,12 +28,10 @@ function App() {
   const [ethBalance, setEthBalance] = useState(0);
   const [selectedWallet, setSelectedWallet] = useState("");
   const [curAcc, setcurAcc] = useState("");
-  // const [songs, setSongs] = useState<
-  //   { songAuthor: string; songDesc: string }[]
-  // >([]);
   const [dappify, setDappify] = useState<ethers.Contract>();
   const [posts, setPosts] = useState<{ song: any }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File>();
+  const [deployed, setDeployed] = useState(false);
 
   // Initialize the application and MetaMask Event Handlers
   useEffect(() => {
@@ -111,29 +110,45 @@ function App() {
     const signer = provider.getSigner();
 
     if (networkData) {
+      if (await provider.getCode(networkData.address) == "0x") {
+        alert("Contract not deployed! at " + networkData.address);
+        console.log("Contract not deployed! at " + networkData.address);
+      }
+      setDeployed(true);
       const dappifycontract = new ethers.Contract(
         networkData.address,
         Dappify.abi,
         signer
       );
-      console.log(dappifycontract);
+
       setDappify(dappifycontract);
-      if (dappify) {
-        loadSongs();
-      }
+      loadSongs();
     } else {
       window.alert("Dappify contract not deployed to detected network.");
     }
   };
 
   const uploadPost = async (description: string) => {
+    if(deployed == false) { alert("Contract is not deployed!"); return }
     // upload files
     if (selectedFile) {
       const result = await (ipfs as IPFSHTTPClient).add(selectedFile);
       let hash = result.path;
 
       if (dappify) {
-        dappify.uploadPost(hash, description);
+        const tx = await dappify.uploadPost(hash, description);
+        console.log(tx);
+        const txhash = tx.hash;
+
+        let transactionReceipt = null
+        while (transactionReceipt == null) { // Waiting until the transaction is mined
+          transactionReceipt = await (window as any).ethereum.request({
+            method: "eth_getTransactionReceipt",
+            params: [txhash],
+          });
+        }
+        console.log(transactionReceipt);
+
         loadSongs();
       }
     } else {
@@ -182,27 +197,6 @@ function App() {
     setEthBalance(eth);
   };
 
-  const handleSendTransaction = async (
-    sender: number,
-    receiver: number,
-    amount: number
-  ) => {
-    const gasPrice = "0x5208"; // 21000 Gas Price
-    const amountHex = (amount * Math.pow(10, 18)).toString(16);
-
-    const tx = {
-      from: sender,
-      to: receiver,
-      value: amountHex,
-      gas: gasPrice,
-    };
-
-    await (window as any).ethereum.request({
-      method: "eth_sendTransaction",
-      params: [tx],
-    });
-  };
-
   const showPosts = () => {
     if (posts) {
       console.log("posts: ");
@@ -217,17 +211,21 @@ function App() {
   };
 
   const loadSongs = async () => {
+    console.log(dappify);
     if (dappify) {
       const postCount = await dappify.postCount();
+      showPosts();
       if (postCount) {
         console.log("postCount: ");
         console.log(postCount);
 
+        setPosts([]); // set posts to an empty array
+
         // load songs
         for (var i = 1; i <= postCount; i++) {
           const song = await dappify.posts(i);
+
           //setPosts((prev) => [...prev, { posts: [...posts, song] }]);
-          setPosts([]); // set posts to an empty array
           setPosts((prev) => [...prev, { song }]);
         }
         if (posts) {
@@ -258,7 +256,6 @@ function App() {
       />
       <UploadSong uploadPost={uploadPost} setSelectedFile={setSelectedFile} />
       <Songs posts={posts} />
-      <button onClick={showPosts}>Show posts</button>
       <button onClick={loadSongs}>Load songs</button>
     </Layout>
   );
