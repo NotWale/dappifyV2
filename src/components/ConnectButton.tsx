@@ -39,7 +39,6 @@ export default function ConnectButton({
         onClick={() => setOpen(!isOpen)}
       >
         <h6 className="ml-2">
-          {/* {`${ethBalance % 1 != 0 ? ethBalance.toFixed(3) : ethBalance}`} ETH */}
           {ethBalance} ETH
         </h6>
         <h6 className="flex h-full pt-1 ml-2 px-2 border border-gray-800 bg-gray-900 rounded-xl">

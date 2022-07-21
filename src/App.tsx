@@ -32,6 +32,7 @@ function App() {
   const [posts, setPosts] = useState<{ song: any }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File>();
   const [deployed, setDeployed] = useState(false);
+  const [state, setState] = useState('idle');
 
   // Initialize the application and MetaMask Event Handlers
   useEffect(() => {
@@ -136,7 +137,11 @@ function App() {
       let hash = result.path;
 
       if (dappify) {
-        const tx = await dappify.uploadPost(hash, description);
+        const tx = await dappify.uploadPost(hash, description).catch((e: any) => {
+          if (e.code === 4001){
+              setState('error');
+          } 
+        });
         console.log(tx);
         const txhash = tx.hash;
 
@@ -148,11 +153,12 @@ function App() {
           });
         }
         console.log(transactionReceipt);
-
+        setState('success');
         loadSongs();
       }
     } else {
       alert("No file selected!");
+      setState('error');
       return;
     }
   };
@@ -254,7 +260,7 @@ function App() {
         setIsConnected={setIsConnected}
         setWalletAccount={setWalletAccount}
       />
-      <UploadSong uploadPost={uploadPost} setSelectedFile={setSelectedFile} />
+      <UploadSong uploadPost={uploadPost} setSelectedFile={setSelectedFile} state={state} setState={setState} />
       <Songs posts={posts} />
       <button onClick={loadSongs}>Load songs</button>
     </Layout>

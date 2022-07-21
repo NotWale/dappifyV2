@@ -1,28 +1,32 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUpload } from '@fortawesome/free-solid-svg-icons'
+import ReactiveButton from 'reactive-button';
 
 type Props = {
   uploadPost: any;
   setSelectedFile: any;
+  state: any;
+  setState: any;
 };
 
-export default function UploadSong({ uploadPost, setSelectedFile }: Props) {
+export default function UploadSong({ uploadPost, setSelectedFile, setState, state }: Props) {
   const [desc, setDesc] = useState("");
-
+  
   return (
     <div className="flex h-1/3">
       <div className="flex flex-col mt-16 mx-auto py-1 px-1 w-72 h-72 rounded-full shadow-2xl">
         <form
           className="my-auto flex flex-col"
           onSubmit={(event) => {
+            setState('loading');
             event.preventDefault();
             uploadPost(desc);
           }}
         >
           <label htmlFor="inputTag" className="mx-auto cursor-pointer">
           Upload mp3 File <br/>
-          <FontAwesomeIcon className="ml-11 h-8 w-8" icon={faUpload} />
+          <FontAwesomeIcon className="ml-8 my-1" icon={faUpload} size="3x" beatFade/>
             <input
               id="inputTag"
               className="hidden"
@@ -47,12 +51,7 @@ export default function UploadSong({ uploadPost, setSelectedFile }: Props) {
             onChange={(e) => setDesc(e.target.value)}
             required
           />
-          <button
-            type="submit"
-            className="w-max mx-auto mt-4 border-2 border-gray-700 px-3 py-1.5 rounded-xl text-white bg-[#000202] hover:border-blue-700"
-          >
-            Upload Song
-          </button>
+          <ReactiveButton type="submit" buttonState={state} idleText={'Upload Song'} loadingText={'This takes a while... :I'} className="ml-12 w-[188px] bg-blue-700 rounded-xl"/>
         </form>
       </div>
     </div>
