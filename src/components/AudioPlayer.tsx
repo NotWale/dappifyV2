@@ -5,12 +5,14 @@ type Props = {
     hash: any;
     author: string;
     description: string;
+    isPlaying: boolean;
+    togglePlay: any;
   };
 
-const AudioPlayer = ({ hash, author, description }: Props) => {
+const AudioPlayer = ({ hash, author, description, isPlaying, togglePlay }: Props) => {
   // State
   const [trackProgress, setTrackProgress] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPl,setPl] = useState(false);
 
   // Refs
   const audioRef = useRef(new Audio(`https://ipfs.infura.io/ipfs/${hash}`));
@@ -48,28 +50,31 @@ const AudioPlayer = ({ hash, author, description }: Props) => {
 
   const onScrubEnd = () => {
     // If not already playing, start
-    if (!isPlaying) {
-      setIsPlaying(true);
+    if (!isPl && !isPlaying) {
+      setPl(true);
+      togglePlay();
     }
     startTimer();
   };
 
   useEffect(() => {
-    if (isPlaying) {
+    if (isPl && isPlaying) {
       audioRef.current.play();
       startTimer();
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying]);
+  }, [isPl]);
 
   return (
-    <div className="max-w-[450px] mb-12 p-[24px] rounded-2xl shadow-xl m-auto text-white">
+    <div className="max-w-[450px] mb-12 p-[24px] rounded-2xl shadow-xl m-auto text-white animate-drop-bounce">
       <div className="text-center z-10 relative">
         <h3 className="font-light mt-0">{author}</h3>
         <AudioControls
           isPlaying={isPlaying}
-          onPlayPauseClick={setIsPlaying}
+          onPlayPauseClick={togglePlay}
+          setPl={setPl}
+          isPl={isPl}
         />
         <input
           type="range"

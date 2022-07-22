@@ -4,19 +4,21 @@ import {Dispatch, SetStateAction,} from 'react';
 
 type Props = {
     isPlaying: boolean;
-    onPlayPauseClick: Dispatch<SetStateAction<boolean>>;
+    onPlayPauseClick: any;
+    setPl: any;
+    isPl: boolean;
   };
 
 const AudioControls = ({
   isPlaying,
-  onPlayPauseClick,
+  onPlayPauseClick, setPl, isPl
 }: Props) => (
   <div className="flex justify-between w-3/4 m-auto">
-    {isPlaying ? (
+    {isPl ? (
       <button
         type="button"
         className="mx-auto bg-none rounded-none cursor-pointer"
-        onClick={() => onPlayPauseClick(false)}
+        onClick={() => { onPlayPauseClick(); setPl(false); }}
         aria-label="Pause"
       >
         <Pause className="h-[30px] w-[30px]"/>
@@ -25,7 +27,7 @@ const AudioControls = ({
       <button
         type="button"
         className="mx-auto bg-none rounded-none cursor-pointer"
-        onClick={() => onPlayPauseClick(true)}
+        onClick={() => { onPlayPauseClick(); setPl(true); }}
         aria-label="Play"
       >
         <Play className="h-[30px] w-[30px]"/>

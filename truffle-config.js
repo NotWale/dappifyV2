@@ -20,12 +20,16 @@
 
 require("babel-register");
 require("babel-polyfill");
+require('dotenv').config();
 
 //const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
+
+const HDWalletProvider = require("@truffle/hdwallet-provider");
+const { API_URL, MNEMONIC } = process.env;
 
 module.exports = {
   /**
@@ -39,6 +43,15 @@ module.exports = {
    */
 
   networks: {
+    goerli: {
+      provider: function() {
+        return new HDWalletProvider(MNEMONIC, API_URL)
+      },
+      network_id: 5,
+      gas: 4000000, //4M is the max
+      networkCheckTimeout: 10000,
+      timeoutBlocks: 200
+    },
     // Useful for testing. The `development` name is special - truffle uses it by default
     // if it's defined here and no other network is specified at the command line.
     // You should run a client (like ganache-cli, geth or parity) in a separate terminal

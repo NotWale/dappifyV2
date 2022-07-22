@@ -51,7 +51,7 @@ export default function UploadSong({ uploadPost, setSelectedFile, setState, stat
             onChange={(e) => setDesc(e.target.value)}
             required
           />
-          <ReactiveButton type="submit" buttonState={state} idleText={'Upload Song'} loadingText={'This takes a while... :I'} className="ml-12 w-[188px] bg-blue-700 rounded-xl"/>
+          <ReactiveButton type="submit" buttonState={state} idleText={'Upload Song'} loadingText={'This takes a while... :I'} style={{ borderRadius: '12px', width: '188px' }} className="ml-12 bg-blue-700"/>
         </form>
       </div>
     </div>

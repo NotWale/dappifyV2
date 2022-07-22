@@ -130,7 +130,7 @@ function App() {
   };
 
   const uploadPost = async (description: string) => {
-    if(deployed == false) { alert("Contract is not deployed!"); return }
+    if(deployed == false) { alert("Contract is not deployed!"); setState('error'); return }
     // upload files
     if (selectedFile) {
       const result = await (ipfs as IPFSHTTPClient).add(selectedFile);
