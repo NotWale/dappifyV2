@@ -6,6 +6,8 @@ Original repo that is not being updated anymore!: https://github.com/NotWale/dap
 
 Live version on [On Vercel](https://dappify-v2-testnet.vercel.app/)
 
+If it says 'Contract not deployed at ...', you need MetaMask installed and connected to Goerli testnet!
+
 (Requires GoerliETH)
 
 Completly rewritten the UI to make it more appealing on the eye and rewritten the overall frontend<->backend interaction code.
