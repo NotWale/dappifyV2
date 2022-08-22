@@ -21,10 +21,12 @@ function App() {
   const [dappify, setDappify] = useState<ethers.Contract>();
   const [posts, setPosts] = useState<{ song: any }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File>();
+  const [buffer, setBuffer] = useState<Buffer>();
   const [deployed, setDeployed] = useState(false);
   const [state, setState] = useState('idle');
   const [bundlrInstance, setBundlrInstance] = useState<WebBundlr>();
   const [balance, setBalance] = useState<string>('');
+  const [URI, setURI] = useState<string>();
 
   // Initialize the application and MetaMask Event Handlers
   useEffect(() => {
@@ -174,33 +176,47 @@ function App() {
     if(deployed == false) { alert("Contract is not deployed!"); setState('error'); return }
     // upload files
     if (selectedFile) {
-      let uploadFile: (file: Buffer) => Promise<any>;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setBuffer(Buffer.from(reader.result as ArrayBuffer));
+        }
+      };
+      reader.readAsArrayBuffer(selectedFile);
+      console.log("Buffer: ", buffer);
       //let res = await bundlrInstance?.uploader.upload(uploadFile, [{ name: "Content-Type", value: "image/png" }])
-      //console.log(res);
 
-      //const result = await (ipfs as IPFSHTTPClient).add(selectedFile);
-      //let hash = result.path;
+      if (dappify) {
+        try{
+          let uploadFile = await bundlrInstance?.uploader.upload(buffer!)
+          console.log(uploadFile);
+          let hash = uploadFile!.data.id;
+          setURI(`http://arweave.net/${hash}`);
+          fetchBalance();
 
-      // if (dappify) {
-      //   const tx = await dappify.uploadPost(hash, description).catch((e: any) => {
-      //     if (e.code === 4001){
-      //         setState('error');
-      //     } 
-      //   });
-      //   console.log(tx);
-      //   const txhash = tx.hash;
+          const tx = await dappify.uploadPost(hash, description).catch((e: any) => {
+            if (e.code === 4001){
+                setState('error');
+            } 
+          });
+          console.log(tx);
+          const txhash = tx.hash;
 
-      //   let transactionReceipt = null
-      //   while (transactionReceipt == null) { // Waiting until the transaction is mined
-      //     transactionReceipt = await (window as any).ethereum.request({
-      //       method: "eth_getTransactionReceipt",
-      //       params: [txhash],
-      //     });
-      //   }
-      //   console.log(transactionReceipt);
-      //   setState('success');
-      //   loadSongs();
-      // }
+          let transactionReceipt = null
+          while (transactionReceipt == null) { // Waiting until the transaction is mined
+            transactionReceipt = await (window as any).ethereum.request({
+              method: "eth_getTransactionReceipt",
+              params: [txhash],
+            });
+          }
+
+          console.log(transactionReceipt);
+          setState('success');
+          loadSongs();
+        }catch (error){
+          console.log(error);
+        }
+      }
     } else {
       alert("No file selected!");
       setState('error');

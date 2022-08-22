@@ -15,7 +15,7 @@ const AudioPlayer = ({ hash, author, description, isPlaying, togglePlay }: Props
   const [isPl,setPl] = useState(false);
 
   // Refs
-  const audioRef = useRef(new Audio(`https://ipfs.infura.io/ipfs/${hash}`));
+  const audioRef = useRef(new Audio(`http://arweave.net/${hash}`));
   const intervalRef = useRef<NodeJS.Timer>();
 
   // Destructure for conciseness

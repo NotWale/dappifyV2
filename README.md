@@ -9,6 +9,8 @@ Original repo that is not being updated anymore!: https://github.com/NotWale/dap
 Live version on [On Vercel](https://dappify-v2-testnet.vercel.app/)
 
 (Requires testnet Mumbai MATIC)
+Please make sure you're on Mumbai Testnet before using this dApp,
+while I implement an error handling for this :')
 
 This dApp now uses MATIC instead of ETH.
 How to use:
