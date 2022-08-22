@@ -43,14 +43,26 @@ module.exports = {
    */
 
   networks: {
-    goerli: {
+    // goerli: {
+    //   provider: function() {
+    //     return new HDWalletProvider(MNEMONIC, API_URL)
+    //   },
+    //   network_id: 5,
+    //   gas: 4000000, //4M is the max
+    //   networkCheckTimeout: 10000,
+    //   timeoutBlocks: 200
+    // },
+    mumbai: {
       provider: function() {
         return new HDWalletProvider(MNEMONIC, API_URL)
       },
-      network_id: 5,
-      gas: 4000000, //4M is the max
-      networkCheckTimeout: 10000,
-      timeoutBlocks: 200
+      network_id: 80001,
+      chain_id: 80001,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+      disableConfirmationListener: true,
+      pollingInterval: 1800000,
     },
     // Useful for testing. The `development` name is special - truffle uses it by default
     // if it's defined here and no other network is specified at the command line.
@@ -96,8 +108,8 @@ module.exports = {
   },
 
   // Configure your compilers
-  compilers: {
-    solc: {
+  // compilers: {
+  //   solc: {
       // version: "0.5.1",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
       // settings: {          // See the solidity docs for advice about optimization and evmVersion
@@ -107,8 +119,8 @@ module.exports = {
       //  },
       //  evmVersion: "byzantium"
       // }
-    },
-  },
+  //   },
+  // },
 
   contracts_directory: "./src/contracts/",
   contracts_build_directory: "./src/abis/",

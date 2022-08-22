@@ -1,24 +1,14 @@
 import "./App.css";
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { ethers, utils } from "ethers";
+import { WebBundlr } from '@bundlr-network/client';
 import Dappify from "./abis/Dappify.json";
 import Layout from "./components/Layout";
 import ConnectButton from "./components/ConnectButton";
 import AccountModal from "./components/AccountModal";
 import UploadSong from "./components/UploadSong";
 import Songs from "./components/Songs";
-import { create, CID, IPFSHTTPClient } from "ipfs-http-client";
-import { access } from "fs";
-
-let ipfs: IPFSHTTPClient | undefined;
-try {
-  ipfs = create({
-    url: "https://ipfs.infura.io:5001/api/v0",
-  });
-} catch (error) {
-  console.error("IPFS error ", error);
-  ipfs = undefined;
-}
+import BigNumber from 'bignumber.js';
 
 function App() {
   const [isOpen, setOpen] = useState(false);
@@ -33,6 +23,8 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<File>();
   const [deployed, setDeployed] = useState(false);
   const [state, setState] = useState('idle');
+  const [bundlrInstance, setBundlrInstance] = useState<WebBundlr>();
+  const [balance, setBalance] = useState<string>('');
 
   // Initialize the application and MetaMask Event Handlers
   useEffect(() => {
@@ -58,33 +50,16 @@ function App() {
     setIsConnected(walletAccount ? true : false);
   }, [walletAccount]);
 
-  // Connect Once and set the account.
-  // Can be used to trigger a new account request each time,
-  // unlike 'eth_requestAccounts'
-  const handleConnectOnce = async () => {
-    const accounts = await (window as any).ethereum
-      .request({
-        method: "wallet_requestPermissions",
-        params: [
-          {
-            eth_accounts: {},
-          },
-        ],
-      })
-      .then(() =>
-        (window as any).ethereum.request({ method: "eth_requestAccounts" })
-      );
-
-    setWalletAccount(accounts[0]);
-  };
+  useEffect(() => {
+    if (bundlrInstance) {
+        fetchBalance();
+    }
+  }, [bundlrInstance])
 
   // Get selected account in MetaMask
   useEffect(() => {
     getAccount();
     getContract();
-    if (!ipfs) {
-      alert("Not connected to IPFS. Checkout out the logs for errors");
-    }
   }, []);
 
   const getAccount = async () => {
@@ -129,59 +104,108 @@ function App() {
     }
   };
 
-  const uploadPost = async (description: string) => {
-    if(deployed == false) { alert("Contract is not deployed!"); setState('error'); return }
-    // upload files
-    if (selectedFile) {
-      const result = await (ipfs as IPFSHTTPClient).add(selectedFile);
-      let hash = result.path;
-
-      if (dappify) {
-        const tx = await dappify.uploadPost(hash, description).catch((e: any) => {
-          if (e.code === 4001){
-              setState('error');
-          } 
-        });
-        console.log(tx);
-        const txhash = tx.hash;
-
-        let transactionReceipt = null
-        while (transactionReceipt == null) { // Waiting until the transaction is mined
-          transactionReceipt = await (window as any).ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txhash],
-          });
+  const initialiseBundlr = async () => {
+    const provider = new ethers.providers.Web3Provider(
+      (window as any).ethereum
+    );
+    const bundlr = new WebBundlr(
+        "https://devnet.bundlr.network",
+        "matic",
+        provider,
+        {
+            providerUrl:
+                process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL,
         }
-        console.log(transactionReceipt);
-        setState('success');
-        loadSongs();
-      }
-    } else {
-      alert("No file selected!");
-      setState('error');
-      return;
-    }
-  };
+    );
+    await bundlr.ready();
+    setBundlrInstance(bundlr);
 
-  // Request the personal signature of the user via MetaMask and deliver a message.
-  const handlePersonalSign = async () => {
-    console.log("Sign Authentication");
-
-    const message = [
-      "This site is requesting your signature to approve login authorization!",
-      "I have read and accept the non-existent terms and conditions of this app.",
-      "Please sign me in!",
-    ].join("\n\n");
+    console.log("Connecting MetaMask...");
 
     const accounts = await (window as any).ethereum.request({
       method: "eth_requestAccounts",
     });
     const account = accounts[0];
 
-    const sign = await (window as any).ethereum.request({
-      method: "personal_sign",
-      params: [message, account],
-    });
+    console.log("Account: ", account);
+    setWalletAccount(account);
+    handleGetBalance();
+    fetchBalance();
+
+    loadSongs();
+  }
+
+  async function fetchBalance() {
+    if (bundlrInstance) {
+        const bal = await bundlrInstance.getLoadedBalance();
+        console.log("bal: ", utils.formatEther(bal.toString()));
+        setBalance(utils.formatEther(bal.toString()));
+    }
+  }
+
+  function parseInput(input: number) {
+    const conv = new BigNumber(input).multipliedBy(bundlrInstance!.currencyConfig.base[1])
+    if (conv.isLessThan(1)) {
+        console.log('error: value too small')
+        return
+    } else {
+        return conv
+    }
+  }
+
+  async function fundWallet(amount: number) {
+    try {
+        if (bundlrInstance) {
+            if (!amount) return
+            const amountParsed = parseInput(amount)
+            if (amountParsed) {
+                console.log('Adding funds please wait')
+                let response = await bundlrInstance.fund(amountParsed)
+                console.log('Wallet funded: ', response)
+            }
+            fetchBalance()
+        }
+    } catch (error) {
+        console.log("error", error);
+    }
+  }
+
+  const uploadPost = async (description: string) => {
+    if(deployed == false) { alert("Contract is not deployed!"); setState('error'); return }
+    // upload files
+    if (selectedFile) {
+      let uploadFile: (file: Buffer) => Promise<any>;
+      //let res = await bundlrInstance?.uploader.upload(uploadFile, [{ name: "Content-Type", value: "image/png" }])
+      //console.log(res);
+
+      //const result = await (ipfs as IPFSHTTPClient).add(selectedFile);
+      //let hash = result.path;
+
+      // if (dappify) {
+      //   const tx = await dappify.uploadPost(hash, description).catch((e: any) => {
+      //     if (e.code === 4001){
+      //         setState('error');
+      //     } 
+      //   });
+      //   console.log(tx);
+      //   const txhash = tx.hash;
+
+      //   let transactionReceipt = null
+      //   while (transactionReceipt == null) { // Waiting until the transaction is mined
+      //     transactionReceipt = await (window as any).ethereum.request({
+      //       method: "eth_getTransactionReceipt",
+      //       params: [txhash],
+      //     });
+      //   }
+      //   console.log(transactionReceipt);
+      //   setState('success');
+      //   loadSongs();
+      // }
+    } else {
+      alert("No file selected!");
+      setState('error');
+      return;
+    }
   };
 
   // Get the Accounts current Balance and convert to Wei and ETH
@@ -245,6 +269,8 @@ function App() {
   return (
     <Layout>
       <ConnectButton
+        fundWallet={fundWallet}
+        balance={balance}
         isOpen={isOpen}
         setOpen={setOpen}
         setWalletAccount={setWalletAccount}
@@ -260,9 +286,19 @@ function App() {
         setIsConnected={setIsConnected}
         setWalletAccount={setWalletAccount}
       />
-      <UploadSong uploadPost={uploadPost} setSelectedFile={setSelectedFile} state={state} setState={setState} />
-      <Songs posts={posts} />
-      <button onClick={loadSongs}>Load songs</button>
+
+      {bundlrInstance ? 
+        <div>
+          <UploadSong uploadPost={uploadPost} setSelectedFile={setSelectedFile} state={state} setState={setState} />
+          <Songs posts={posts} />
+          <button className="absolute bottom-0" onClick={loadSongs}>Load songs</button>
+        </div>
+        :
+        <div className="absolute -ml-36 top-1/3 left-1/2 w-72 h-72 rounded-full shadow-2xl">
+          <button className="ml-20 mt-32 px-1 py-1 border-2 bg-white rounded-xl"
+                  onClick={initialiseBundlr}>Initialise Bundlr</button>
+        </div>
+      }      
     </Layout>
   );
 }
